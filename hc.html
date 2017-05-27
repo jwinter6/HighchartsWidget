@@ -2,158 +2,122 @@
 <html>
 
 	<head>
+		<!--Prober way: load style in head-->
 		<style type="text/css">
 			#container { min-width: 310px; max-width: 800px; height: 400px; margin: 0 auto }
-			#container2 { min-width: 310px; max-width: 800px; height: 400px; margin: 0 auto }
 		</style>
+
+		<!--loading scripts in head-->
 		<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+		<script src="http://code.highcharts.com/highcharts.js"></script>
 	</head>
 
 	<body>
-		<script src="code/highcharts.js"></script>
-		<script src="code/modules/exporting.js"></script>
 
-		<h4>Using proper JS</h4>
-		<div id="container"></div>
+		<!--the 2 elements-->
 		<h4>Using JQuery (default output of hc_export)</h4>
+		<div id="container"></div>
+		<h4>Using JQuery (converted to R chr before)</h4>
 		<div id="container2"></div>
 
-		<!-- Proper JS -->
-		<script type="text/javascript">
-			Highcharts.chart('container', {
 
-			    title: {
-			        text: 'Solar Employment Growth by Sector, 2010-2016'
-			    },
 
-			    subtitle: {
-			        text: 'Source: thesolarfoundation.com'
-			    },
-
-			    yAxis: {
-			        title: {
-			            text: 'Number of Employees'
-			        }
-			    },
-			    legend: {
-			        layout: 'vertical',
-			        align: 'right',
-			        verticalAlign: 'middle'
-			    },
-
-			    plotOptions: {
-			        series: {
-			            pointStart: 2010
-			        }
-			    },
-
-			    series: [{
-			        name: 'Installation',
-			        data: [43934, 52503, 57177, 69658, 97031, 119931, 137133, 154175]
-			    }, {
-			        name: 'Manufacturing',
-			        data: [24916, 24064, 29742, 29851, 32490, 30282, 38121, 40434]
-			    }, {
-			        name: 'Sales & Distribution',
-			        data: [11744, 17722, 16005, 19771, 20185, 24377, 32147, 39387]
-			    }, {
-			        name: 'Project Development',
-			        data: [null, null, 7988, 12169, 15112, 22452, 34400, 34227]
-			    }, {
-			        name: 'Other',
-			        data: [12908, 5948, 8105, 11248, 8989, 11816, 18274, 18111]
-			    }]
-
-			});
+		<!-- proper JQuery (default output form hc_export) -->
+		<script>
+		$(function () {
+$('#container').highcharts({
+		title: {
+			text: null
+		},
+		yAxis: {
+			title: {
+				text: null
+			}
+		},
+		credits: {
+			enabled: false
+		},
+		exporting: {
+			enabled: false
+		},
+		plotOptions: {
+			series: {
+				turboThreshold: 0
+			},
+			treemap: {
+				layoutAlgorithm: "squarified"
+			},
+			bubble: {
+				minSize: 5,
+				maxSize: 25
+			}
+		},
+		annotationsOptions: {
+			enabledButtons: false
+		},
+		tooltip: {
+			delayForDisplay: 10
+		},
+		series: [
+			{
+				group: "group",
+				data: [
+					{
+						x: 102,
+						y: 55
+					},
+					{
+						x: 71,
+						y: 98
+					},
+					{
+						x: 48,
+						y: 79
+					},
+					{
+						x: 52,
+						y: 68
+					},
+					{
+						x: 5,
+						y: 61
+					},
+					{
+						x: 40,
+						y: 86
+					},
+					{
+						x: 88,
+						y: 64
+					},
+					{
+						x: 80,
+						y: 92
+					},
+					{
+						x: 82,
+						y: 97
+					},
+					{
+						x: 31,
+						y: 24
+					}
+				],
+				type: "scatter"
+			}
+		]
+	}
+);
+});
 		</script>
 
-		<!-- JQuery (default output form hc_export) -->
+		<!-- inproper JQuery (converted to R chr)
+		style for container loaded in body -->
+		<style type="text/css">
+			#container2 { min-width: 310px; max-width: 800px; height: 400px; margin: 0 auto }
+		</style>
 		<script>
-			$(function () {
-			  $('#container2').highcharts({
-			      title: {
-			        text: null
-			      },
-			      yAxis: {
-			        title: {
-			          text: null
-			        }
-			      },
-			      credits: {
-			        enabled: false
-			      },
-			      exporting: {
-			        enabled: false
-			      },
-			      plotOptions: {
-			        series: {
-			          turboThreshold: 0
-			        },
-			        treemap: {
-			          layoutAlgorithm: "squarified"
-			        },
-			        bubble: {
-			          minSize: 5,
-			          maxSize: 25
-			        }
-			      },
-			      annotationsOptions: {
-			        enabledButtons: false
-			      },
-			      tooltip: {
-			        delayForDisplay: 10
-			      },
-			      series: [
-			        {
-			          group: "group",
-			          data: [
-			            {
-			              x: 15,
-			              y: 60
-			            },
-			            {
-			              x: 39,
-			              y: 103
-			            },
-			            {
-			              x: 81,
-			              y: 51
-			            },
-			            {
-			              x: 18,
-			              y: 96
-			            },
-			            {
-			              x: 2,
-			              y: 43
-			            },
-			            {
-			              x: 10,
-			              y: 31
-			            },
-			            {
-			              x: 88,
-			              y: 91
-			            },
-			            {
-			              x: 38,
-			              y: 99
-			            },
-			            {
-			              x: 58,
-			              y: 57
-			            },
-			            {
-			              x: 0,
-			              y: 89
-			            }
-			          ],
-			          type: "scatter"
-			        }
-			      ]
-			    }
-			  );
-			});
+		$(function () { $('#container2').highcharts({  title: { text: null }, yAxis: { title: { text: null } }, credits: { enabled: false }, exporting: { enabled: false }, plotOptions: { series: { turboThreshold: 0 }, treemap: { layoutAlgorithm: "squarified" }, bubble: { minSize: 5, maxSize: 25 } }, annotationsOptions: { enabledButtons: false }, tooltip: { delayForDisplay: 10 }, series: [ { group: "group", data: [ { x: 102, y: 55 }, { x: 71, y: 98 }, { x: 48, y: 79 }, { x: 52, y: 68 }, { x: 5, y: 61 }, { x: 40, y: 86 }, { x: 88, y: 64 }, { x: 80, y: 92 }, { x: 82, y: 97 }, { x: 31, y: 24 } ], type: "scatter" } ] } ); });
 		</script>
 
 
