@@ -1,20 +1,15 @@
-
+# libs
 library(highcharter)
 library(shiny)
 
-# make plot
+
+# Functions
+
+# data generator
 getData <- function(n) {
   data.frame(x = rpois(n, 100 * rbeta(n, .8, .4)), 
              y = rpois(n, 100 * rbeta(n, .8, .4)))
 }
-sim <- getData(6000)
-hc <- highchart() %>%
-      hc_add_series(data = sim, "point", hcaes(x = x, y = y))
-hc
-
-# usual export as jquery
-export_hc(hc, "export.js")
-
 
 #' str_hc
 #' 
@@ -50,16 +45,9 @@ str_hc <- function (hc, id) {
   return(jslns)
 }
 
-# write R chr containing jquery
-s <- str_hc(hc, "container2")
-writeLines(s, "Rchr.js")
-
-
-
 #' highcharts
 #' 
 #' Load all the latest highcharts modules. 
-#' Use this in \code{tags$head}.
 #' 
 highcharts <- function() {
   tagList(
@@ -84,12 +72,11 @@ highcharts <- function() {
   )
 }
 
-
 #' style
 #' 
 #' Define Style for highchart scontainer
 #'
-style <- function(id, minWidth = "310px", maxWidth = "800px",
+style <- function(id, minWidth = "310px", maxWidth = "1000px",
                   height = "800px", margin = "0 auto") {
  str <- sprintf("#%s { min-width: %s; max-width: %s; height: %s; margin: %s }",
                 id, minWidth, maxWidth, height, margin) 
@@ -98,62 +85,43 @@ style <- function(id, minWidth = "310px", maxWidth = "800px",
 
 
 
-
-
-# app
-id <- "id"
-pwd <- getwd()
-file <- sprintf("highchartsplot_%s.js", id)
-path <- file.path(pwd, file)
-
-# make app that src jquery (doesnt show anything)
-# ! view Page Source -> copy to test.html -> works...?
+# actual app
 ui <- fluidPage(sidebarLayout(
   sidebarPanel(
     tags$head(highcharts()),
     h3("Simulate Data"),
     numericInput("n", "number of points", 10),
-    actionButton("go", "go"),
-    hr(),
-    strong("App is in"),
-    p("NULL", id = "cwd"),
-    tags$script('document.getElementById("cwd").innerHTML = document.location.pathname'),
-    strong("File is"),
-    p(path)
+    actionButton("go", "go")
   ),
   mainPanel(
-    style(id),
-    tags$script(src = paste0("file://", path)),
-    tags$div(id = id)
+    uiOutput("plot")
   )
 ))
 
 server <- function(input, output, session) {
   session$onSessionEnded(stopApp)
   
-  # simulation
+  # generate data
   sim <- eventReactive(input$go, {
     getData(input$n)
   })
   
-  # make jquery chr string from hc
-  # then write it as script with container styling into file
-  # make div w/ script that src file
-  # output$jq <- renderUI({
-  #   hc <- highchart() %>%
-  #     hc_add_series(data = sim(), "point", hcaes(x = x, y = y))
-  #   s <- str_hc(hc, id)
-  #   file <- sprintf("highchartsplot_%s.js", id)
-  #   writeLines(s, file)
-  #   l <- tagList(
-  #     style(id),
-  #     tags$script(src = file),
-  #     tags$div(id = id) 
-  #   )
-  # })
-}
-runApp(list(ui = ui, server = server), launch.browser = TRUE)
+  # make plot
+  output$plot <- renderUI({
+    hc <- highchart() %>%
+      hc_add_series(data = sim(), "point", hcaes(x = x, y = y))
 
+    # return taglist w/ style definition, jquery chr str, div
+    id <- "highcharter_plot"
+    tagList(
+      style(id),
+      tags$script(str_hc(hc, id)),
+      tags$div(id = id) 
+    )
+  })
+}
+
+runApp(list(ui = ui, server = server))
 
 
 
