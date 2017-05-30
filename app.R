@@ -7,11 +7,12 @@ getData <- function(n) {
   data.frame(x = rpois(n, 100 * rbeta(n, .8, .4)), 
              y = rpois(n, 100 * rbeta(n, .8, .4)))
 }
-sim <- getData(10)
+sim <- getData(6000)
 hc <- highchart() %>%
       hc_add_series(data = sim, "point", hcaes(x = x, y = y))
 hc
 
+# usual export as jquery
 export_hc(hc, "export.js")
 
 
@@ -49,6 +50,7 @@ str_hc <- function (hc, id) {
   return(jslns)
 }
 
+# write R chr containing jquery
 s <- str_hc(hc, "container2")
 writeLines(s, "Rchr.js")
 
@@ -99,16 +101,30 @@ style <- function(id, minWidth = "310px", maxWidth = "800px",
 
 
 # app
+id <- "id"
+pwd <- getwd()
+file <- sprintf("highchartsplot_%s.js", id)
+path <- file.path(pwd, file)
 
+# make app that src jquery (doesnt show anything)
+# ! view Page Source -> copy to test.html -> works...?
 ui <- fluidPage(sidebarLayout(
   sidebarPanel(
     tags$head(highcharts()),
     h3("Simulate Data"),
-    numericInput("n", "number of points", 0),
-    actionButton("go", "go")
+    numericInput("n", "number of points", 10),
+    actionButton("go", "go"),
+    hr(),
+    strong("App is in"),
+    p("NULL", id = "cwd"),
+    tags$script('document.getElementById("cwd").innerHTML = document.location.pathname'),
+    strong("File is"),
+    p(path)
   ),
   mainPanel(
-    uiOutput("jq")
+    style(id),
+    tags$script(src = paste0("file://", path)),
+    tags$div(id = id)
   )
 ))
 
@@ -121,25 +137,22 @@ server <- function(input, output, session) {
   })
   
   # make jquery chr string from hc
-  # then write it as script with container styling 
-  # and div container (all must have same id)
-  output$jq <- renderUI({
-    hc <- highchart() %>%
-      hc_add_series(data = sim(), "point", hcaes(x = x, y = y))
-    tagList(
-      style("plot"),
-      tags$script(str_hc(hc, "plot")),
-      tags$div(id = "plot") 
-    )
-  })
+  # then write it as script with container styling into file
+  # make div w/ script that src file
+  # output$jq <- renderUI({
+  #   hc <- highchart() %>%
+  #     hc_add_series(data = sim(), "point", hcaes(x = x, y = y))
+  #   s <- str_hc(hc, id)
+  #   file <- sprintf("highchartsplot_%s.js", id)
+  #   writeLines(s, file)
+  #   l <- tagList(
+  #     style(id),
+  #     tags$script(src = file),
+  #     tags$div(id = id) 
+  #   )
+  # })
 }
 runApp(list(ui = ui, server = server), launch.browser = TRUE)
-
-
-
-
-
-
 
 
 
