@@ -11,40 +11,6 @@ getData <- function(n) {
              y = rpois(n, 100 * rbeta(n, .8, .4)))
 }
 
-#' str_hc
-#' 
-#' Convert the \code{highcharter} object to a \code{chr} string.
-#'  
-str_hc <- function (hc, id) {
-  . <- NULL
-  jslns <- hc$x$hc_opts %>% 
-    jsonlite::toJSON(pretty = TRUE, auto_unbox = TRUE, force = TRUE, null = "null") %>% 
-    stringr::str_split("\n") %>% 
-    head(1) %>% 
-    unlist() %>% 
-    stringr::str_replace("\"", "") %>% 
-    stringr::str_replace("\":", ":")
-  fflag <- stringr::str_detect(jslns, "function()")
-  if (any(fflag)) {
-    jslns <- ifelse(fflag, stringr::str_replace(jslns, "\"function", "function"), jslns)
-    jslns <- ifelse(fflag, stringr::str_replace(jslns, "\",$", ","), jslns)
-    jslns <- ifelse(fflag, stringr::str_replace(jslns, "\"$", ""), jslns)
-    jslns <- ifelse(
-      fflag, 
-      stringr::str_replace_all(jslns, "\\\\n", str_c("\\\\n", stringr::str_extract(jslns, "^\\s+"))), 
-      jslns
-    )
-  }
-  jslns <- jslns %>% 
-    unlist() %>% 
-    tail(-1) %>% 
-    stringr::str_c("    ",., collapse = " ") %>% 
-    stringr::str_replace_all("\\s\\]\\,\\s\\[\\s", "],[") %>% 
-    stringr::str_replace_all("\\s{2,}", " ") %>% 
-    sprintf("$(function () { $('#%s').highcharts({ %s ); });", id, .)
-  return(jslns)
-}
-
 #' highcharts
 #' 
 #' Load all the latest highcharts modules. 
@@ -78,46 +44,91 @@ highcharts <- function() {
 #'
 style <- function(id, minWidth = "310px", maxWidth = "1000px",
                   height = "800px", margin = "0 auto") {
- str <- sprintf("#%s { min-width: %s; max-width: %s; height: %s; margin: %s }",
-                id, minWidth, maxWidth, height, margin) 
- return(tags$style(str, type = "text/css"))
+  str <- sprintf("#%s { min-width: %s; max-width: %s; height: %s; margin: %s }",
+                 id, minWidth, maxWidth, height, margin) 
+  return(tags$style(str, type = "text/css"))
 }
 
 
 
-# actual app
+# CPU time
+n <- 100000
+
+# 1-dim JSON
+system.time({
+  d <- getData(n)
+  d <- lapply(seq_len(nrow(d)), function(i) {
+    as.numeric(d[i, ])
+  })
+  highchart() %>%
+    hc_add_series(data = d, type = "scatter")
+}) # 17s (lapply takes long)
+
+# complex array JSON
+system.time({
+  d <- getData(n)
+  highchart() %>%
+    hc_add_series(data = d, type = "scatter")
+}) # 2s
+
+
+
+
+# in app
+
+# Using Highchart Output, JSON as 1-dim array
+# 45s to plot, responsive afterwards
 ui <- fluidPage(sidebarLayout(
   sidebarPanel(
-    tags$head(highcharts()),
     h3("Simulate Data"),
     numericInput("n", "number of points", 10),
     actionButton("go", "go")
   ),
   mainPanel(
-    uiOutput("plot")
+    highchartOutput("plot")
   )
 ))
 
 server <- function(input, output, session) {
   session$onSessionEnded(stopApp)
-  
-  # generate data
   sim <- eventReactive(input$go, {
     getData(input$n)
   })
-  
-  # make plot
-  output$plot <- renderUI({
+  output$plot <- renderHighchart({
+    d <- lapply(seq_len(nrow(sim())), function(i) {
+      as.numeric(sim()[i, ])
+    })
     hc <- highchart() %>%
-      hc_add_series(data = sim(), "point", hcaes(x = x, y = y))
+      hc_add_series(data = d, type = "scatter")
+    hc
+  })
+}
 
-    # return taglist w/ style definition, jquery chr str, div
-    id <- "highcharter_plot"
-    tagList(
-      style(id),
-      tags$script(str_hc(hc, id)),
-      tags$div(id = id) 
-    )
+runApp(list(ui = ui, server = server))
+
+
+# Using Highchart Output, JSON as complex object
+# 43s to plot, responsive afterwards
+ui <- fluidPage(sidebarLayout(
+  sidebarPanel(
+    h3("Simulate Data"),
+    numericInput("n", "number of points", 10),
+    actionButton("go", "go")
+  ),
+  mainPanel(
+    highchartOutput("plot")
+  )
+))
+
+server <- function(input, output, session) {
+  session$onSessionEnded(stopApp)
+  sim <- eventReactive(input$go, {
+    getData(input$n)
+  })
+  output$plot <- renderHighchart({
+    hc <- highchart() %>%
+      hc_add_series(data = sim(), type = "scatter")
+    hc
   })
 }
 
@@ -126,7 +137,56 @@ runApp(list(ui = ui, server = server))
 
 
 
+# writing js
 
+# write 1-dim JSON
+d <- getData(n)
+d <- lapply(seq_len(nrow(d)), function(i) {
+  as.numeric(d[i, ])
+})
+hc <- highchart() %>%
+  hc_add_series(data = d, type = "scatter")
+export_hc(hc, "1d.json")
+
+# write complex JSON
+d <- getData(n)
+hc <- highchart() %>%
+  hc_add_series(data = d, type = "scatter")
+export_hc(hc, "complex.json")
+
+
+
+
+
+
+
+
+# app
+ui <- fluidPage(sidebarLayout(
+  sidebarPanel(
+    tags$head(highcharts()),
+    radioButtons("src", "source", list("1d", "complex"))
+  ),
+  mainPanel(
+    uiOutput("plot")
+  )
+))
+server <- function(input, output, session) {
+  session$onSessionEnded(stopApp)
+  output$plot <- renderUI({
+    src <- switch(
+      input$src,
+      "1d.js"
+    )
+    id <- "container"
+    tagList(
+      style(id),
+      tags$script(src = src),
+      tags$div(id = id) 
+    )
+  })
+}
+runApp(list(ui = ui, server = server))
 
 
 
