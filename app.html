@@ -4,23 +4,29 @@
 	<head>
 		<!--Prober way: load style in head-->
 		<style type="text/css">
-			#container { min-width: 310px; max-width: 800px; height: 400px; margin: 0 auto }
+			#container1d { min-width: 310px; max-width: 800px; height: 400px; margin: 0 auto }
+			#containercomplex { min-width: 310px; max-width: 800px; height: 400px; margin: 0 auto }
 		</style>
 
 		<!--loading scripts in head-->
 		<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
 		<script src="http://code.highcharts.com/highcharts.js"></script>
+		<script src="https://code.highcharts.com/modules/boost.js"></script>
 	</head>
 
 	<body>
 
+		<h3>Sourced JS from R</h3>
+
 		<!--the 2 elements-->
-		<h4>sourced JS</h4>
-		<div id="container"></div>
+		<h4>1D JSON</h4>
+		<div id="container1d"></div>
 
-		<script src="1d.js"></script>
-		<!-- <script src="complex.js"></script> -->
+		<h4>Complex JSON</h4>
+		<div id="containercomplex"></div>
 
+		<script src='1d.js'></script>
+		<script src='complex.js'></script>
 
 	</body>
 </html>
