@@ -197,7 +197,7 @@ highcharts <- function() {
 #' 
 #' Define Style for highchart scontainer
 #'
-style <- function(id, minWidth = "310px", maxWidth = "1000px",
+style <- function(id, minWidth = "400px", maxWidth = "1000px",
                   height = "800px", margin = "0 auto") {
   str <- sprintf("#%s { min-width: %s; max-width: %s; height: %s; margin: %s }",
                  id, minWidth, maxWidth, height, margin) 

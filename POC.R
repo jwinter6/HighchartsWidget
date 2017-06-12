@@ -1,15 +1,15 @@
 # libs
 library(highcharter)
 library(shiny)
+library(BiocParallel)
 
-
-# Functions
 
 # data generator
 getData <- function(n) {
-  data.frame(x = rpois(n, 100 * rbeta(n, .8, .4)), 
-             y = rpois(n, 100 * rbeta(n, .8, .4)))
+  data.frame(x = rnorm(n, 100 * rbeta(n, .4, .4)), 
+             y = rnorm(n, 100 * rbeta(n, .4, .4)))
 }
+
 
 #' str_hc
 #' 
@@ -45,47 +45,43 @@ str_hc <- function (hc, id) {
   return(jslns)
 }
 
+
 #' highcharts
 #' 
-#' Load all the latest highcharts modules. 
+#' use in tags$head, load libraries
 #' 
 highcharts <- function() {
   tagList(
     tags$script(src = "https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"),
     tags$script(src = "http://code.highcharts.com/highcharts.js"),
-    tags$script(src = "http://code.highcharts.com/highcharts-more.js"),
-    tags$script(src = "http://code.highcharts.com/highcharts-3d.js"),
-    tags$script(src = "http://code.highcharts.com/modules/accessibility.js"),
-    tags$script(src = "http://code.highcharts.com/modules/annotations.js"),
-    tags$script(src = "http://code.highcharts.com/modules/boost.js"),
-    tags$script(src = "http://code.highcharts.com/modules/broken-axis.js"),
-    tags$script(src = "http://code.highcharts.com/modules/canvas-tools.js"),
-    tags$script(src = "http://code.highcharts.com/modules/data.js"),
-    tags$script(src = "http://code.highcharts.com/modules/exporting.js"),
-    tags$script(src = "http://code.highcharts.com/modules/drilldown.js"),
-    tags$script(src = "http://code.highcharts.com/modules/funnel.js"),
-    tags$script(src = "http://code.highcharts.com/modules/heatmap.js"),
-    tags$script(src = "http://code.highcharts.com/modules/no-data-to-display.js"),
-    tags$script(src = "http://code.highcharts.com/modules/offline-exporting.js"),
-    tags$script(src = "http://code.highcharts.com/modules/solid-gauge.js"),
-    tags$script(src = "http://code.highcharts.com/modules/treemap.js")
+    tags$script(src = "https://code.highcharts.com/modules/boost.js")
   )
 }
 
+
 #' style
 #' 
-#' Define Style for highchart scontainer
+#' Define Style for highcharts container
 #'
-style <- function(id, minWidth = "310px", maxWidth = "1000px",
+style <- function(id, minWidth = "400px", maxWidth = "1000px",
                   height = "800px", margin = "0 auto") {
- str <- sprintf("#%s { min-width: %s; max-width: %s; height: %s; margin: %s }",
-                id, minWidth, maxWidth, height, margin) 
- return(tags$style(str, type = "text/css"))
+  str <- sprintf("#%s { min-width: %s; max-width: %s; height: %s; margin: %s }",
+                 id, minWidth, maxWidth, height, margin) 
+  return(tags$style(str, type = "text/css"))
 }
 
 
 
-# actual app
+
+
+
+
+
+# Actual App --------------------------------------------------------------
+
+nproc <- 4
+bpparams <- SnowParam(workers = nproc, type = "SOCK")
+
 ui <- fluidPage(sidebarLayout(
   sidebarPanel(
     tags$head(highcharts()),
@@ -100,33 +96,32 @@ ui <- fluidPage(sidebarLayout(
 
 server <- function(input, output, session) {
   session$onSessionEnded(stopApp)
-  
-  # generate data
   sim <- eventReactive(input$go, {
     getData(input$n)
   })
   
-  # make plot
   output$plot <- renderUI({
-    hc <- highchart() %>%
-      hc_add_series(data = sim(), "point", hcaes(x = x, y = y))
-
-    # return taglist w/ style definition, jquery chr str, div
-    id <- "highcharter_plot"
+    d <- sim()
+    d <- bplapply(seq_len(nrow(d)), function(i) {
+      as.numeric(d[i, ])
+    }, BPPARAM=bpparams)
+    opts <- list(
+      chart = list(zoomType = "xy"),
+      scatter = list(turboThreshold = 0),
+      boost = list(useGPUTranslations = TRUE, usePreAllocated = TRUE)
+    )
+    hc <- highchart(opts) %>%
+      hc_add_series(data = d, type = "scatter", marker = list(radius = .5))
+    id <- sprintf("highchartsPlot_%s", paste(sample(letters, 6), collapse = ""))
+    str <- str_hc(hc, id)
     tagList(
       style(id),
-      tags$script(str_hc(hc, id)),
-      tags$div(id = id) 
+      div(id = id),
+      tags$script(str)
     )
   })
 }
 
 runApp(list(ui = ui, server = server))
-
-
-
-
-
-
 
 
