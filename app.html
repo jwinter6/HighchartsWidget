@@ -4,8 +4,7 @@
 	<head>
 		<!--Prober way: load style in head-->
 		<style type="text/css">
-			#container1d { min-width: 310px; max-width: 800px; height: 400px; margin: 0 auto }
-			#containercomplex { min-width: 310px; max-width: 800px; height: 400px; margin: 0 auto }
+			#highchartsPlot { min-width: 310px; max-width: 800px; height: 800px; margin: 0 auto }
 		</style>
 
 		<!--loading scripts in head-->
@@ -16,17 +15,11 @@
 
 	<body>
 
-		<h3>Sourced JS from R</h3>
-
 		<!--the 2 elements-->
-		<h4>1D JSON</h4>
-		<div id="container1d"></div>
+		<h4>JS from App</h4>
+		<div id="highchartsPlot"></div>
 
-		<h4>Complex JSON</h4>
-		<div id="containercomplex"></div>
-
-		<script src='1d.js'></script>
-		<script src='complex.js'></script>
+		<script src='app.js'></script>
 
 	</body>
 </html>
